@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "name": "ecommerce-frontend",
+  "builds": [
+    {
+      "src": "src/main/resources/static/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "src/main/resources/templates/**/*.html",
+      "use": "@vercel/html"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/js/(.*)",
+      "dest": "/src/main/resources/static/js/$1"
+    },
+    {
+      "src": "/css/(.*)",
+      "dest": "/src/main/resources/static/css/$1"
+    },
+    {
+      "src": "/images/(.*)",
+      "dest": "/src/main/resources/static/images/$1"
+    },
+    {
+      "src": "/login",
+      "dest": "/src/main/resources/templates/login.html"
+    },
+    {
+      "src": "/checkout",
+      "dest": "/src/main/resources/templates/checkout.html"
+    },
+    {
+      "src": "/orders",
+      "dest": "/src/main/resources/templates/orders.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/main/resources/templates/index.html"
+    }
+  ]
+}

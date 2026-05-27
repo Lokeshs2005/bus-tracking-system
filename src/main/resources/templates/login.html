@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started | Ecommerce</title>
+    
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Header & Navigation -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-gem" style="color:var(--primary);"></i>
+                <span>ECOMMERCE</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Catalog</a>
+                <a href="/orders" class="nav-link" th:if="${currentUser != null}">My Orders</a>
+                <a href="/login" class="nav-link active" th:if="${currentUser == null}">Sign In</a>
+            </nav>
+            
+            <div class="nav-actions">
+                <button class="cart-trigger" id="cart-nav-trigger">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" style="display: none;">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Auth Portal Wrapper -->
+    <main style="display: flex; align-items: center; justify-content: center; min-height: 75vh; padding: 0;">
+        <div class="auth-container">
+            
+            <!-- Sleek Interactive Sidebar -->
+            <div class="auth-sidebar">
+                <div class="auth-sidebar-logo">
+                    <i class="fas fa-gem" style="color: var(--primary);"></i> ECOMMERCE
+                </div>
+                <div class="auth-sidebar-quote">
+                    <h2>Refine your space.</h2>
+                    <p>Secure an account in our portal to save persistent carts, track luxurious lifestyle shipments, and obtain physical invoice sheets.</p>
+                </div>
+                <div style="color: rgba(255, 255, 255, 0.4); font-size: 0.85rem;">
+                    Demo Account: <span style="color:#FFF; font-weight: 600;">demo@example.com / password</span>
+                </div>
+            </div>
+
+            <!-- Authentic Form Panels -->
+            <div class="auth-forms">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab-panel="login-panel">Sign In</button>
+                    <button class="auth-tab" data-tab-panel="register-panel">Create Account</button>
+                </div>
+
+                <!-- 1. SIGN-IN PANEL -->
+                <div class="auth-form-panel active" id="login-panel">
+                    <div class="form-message" id="login-message"></div>
+                    
+                    <form id="login-form-element">
+                        <div class="form-group">
+                            <label class="form-label" for="login-email">Email Address</label>
+                            <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label class="form-label" for="login-password">Password</label>
+                            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">
+                            Sign In to Portal <i class="fas fa-sign-in-alt" style="margin-left: 0.5rem;"></i>
+                        </button>
+                    </form>
+
+                    <!-- Firebase Auth Section -->
+                    <div class="auth-divider" style="text-align:center; margin:1.5rem 0; color:var(--text-muted); font-size:0.85rem; position:relative;">
+                        <span style="background:var(--bg-surface); padding:0 0.75rem; position:relative; z-index:1;">or use external sign in</span>
+                        <div style="position:absolute; top:50%; left:0; right:0; height:1px; background:rgba(255,255,255,0.06); z-index:0;"></div>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" id="firebase-google-btn" style="width: 100%; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02); display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 1rem;">
+                        <i class="fab fa-google" style="color: #EA4335;"></i> Sign In with Google (Firebase)
+                    </button>
+
+                    <div class="firebase-config-card" style="margin-top: 1.5rem; background: rgba(255,255,255,0.01); border: 1px dashed var(--border-glass); border-radius: 12px; padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="const fields = document.getElementById('firebase-config-fields'); fields.style.display = fields.style.display === 'none' ? 'block' : 'none';">
+                            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);"><i class="fas fa-sliders-h" style="margin-right: 0.35rem; color:var(--primary);"></i> Firebase Credentials Console</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.75rem; color: var(--text-muted);"></i>
+                        </div>
+                        <div id="firebase-config-fields" style="display: none; margin-top: 1rem; font-size: 0.8rem;">
+                            <p style="color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.75rem; line-height: 1.4;">Paste your Firebase Console Web App Config below to connect live. If left empty, it runs on our built-in Sandbox credentials.</p>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="fb-apikey" class="form-control" style="font-size: 0.75rem; padding: 0.4rem; height: auto;" placeholder="apiKey">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="fb-authdomain" class="form-control" style="font-size: 0.75rem; padding: 0.4rem; height: auto;" placeholder="authDomain">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="fb-projectid" class="form-control" style="font-size: 0.75rem; padding: 0.4rem; height: auto;" placeholder="projectId">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <input type="text" id="fb-appid" class="form-control" style="font-size: 0.75rem; padding: 0.4rem; height: auto;" placeholder="appId">
+                            </div>
+                            <button type="button" id="save-fb-config" class="btn btn-primary" style="padding: 0.5rem; font-size: 0.75rem; width: 100%; margin-top: 0.5rem; border-radius: 8px;">Save Firebase Keys</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SIGN-UP / CREATION PANEL -->
+                <div class="auth-form-panel" id="register-panel">
+                    <div class="form-message" id="register-message"></div>
+                    
+                    <form id="register-form-element">
+                        <div class="form-group">
+                            <label class="form-label" for="reg-fullname">Full Name</label>
+                            <input type="text" id="reg-fullname" class="form-control" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="reg-email">Email Address</label>
+                            <input type="email" id="reg-email" class="form-control" placeholder="name@example.com" required>
+                        </div>
+                        <div class="form-grid-2" style="margin-bottom: 2rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="reg-password">Password</label>
+                                <input type="password" id="reg-password" class="form-control" placeholder="Min. 6 chars" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="reg-confirmpassword">Confirm</label>
+                                <input type="password" id="reg-confirmpassword" class="form-control" placeholder="Re-type" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">
+                            Create Account <i class="fas fa-user-plus" style="margin-left: 0.5rem;"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Sliding Cart Drawer (Shared Layout Widget) -->
+    <div class="cart-drawer-backdrop">
+        <div class="cart-drawer">
+            <div class="cart-header">
+                <h3 class="cart-title">
+                    <i class="fas fa-shopping-bag" style="color: var(--secondary);"></i>
+                    <span>Shopping Cart</span>
+                </h3>
+                <button class="cart-close"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="cart-items-container">
+                <!-- Dynamically compiled -->
+            </div>
+            
+            <div class="cart-footer">
+                <div class="cart-summary-row">
+                    <span>Subtotal</span>
+                    <span id="drawer-subtotal">$0.00</span>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Shipping</span>
+                    <span id="drawer-shipping">$0.00</span>
+                </div>
+                <div class="cart-summary-total">
+                    <span>Grand Total</span>
+                    <span id="drawer-total">$0.00</span>
+                </div>
+                
+                <div class="cart-shipping-notice">
+                    <i class="fas fa-truck-fast"></i> Free shipping on orders over $100.00!
+                </div>
+                
+                <a href="/checkout" class="btn btn-primary" id="drawer-checkout-btn" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">
+                    Proceed to Payment <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Ecommerce Co. All rights reserved.</p>
+        <div class="links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="/h2-console" target="_blank" style="color: var(--secondary);"><i class="fas fa-database"></i> H2 Database Console</a>
+        </div>
+    </footer>
+
+    <!-- Global Client Script -->
+    <script src="/js/main.js"></script>
+</body>
+</html>

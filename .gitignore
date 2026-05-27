@@ -1,0 +1,9 @@
+/target/
+/data/
+*.db
+*.log
+.gemini/
+.idea/
+.vscode/
+.system_generated/
+/apache-maven-3.9.9/

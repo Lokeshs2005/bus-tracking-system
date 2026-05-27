@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecommerce | Luxury Tech & Ambient Desk Setups</title>
+    
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome CDN for futuristic icon support -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- 1. Header & Unified Navigation Bar -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-gem" style="color:var(--primary);"></i>
+                <span>ECOMMERCE</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link active">Catalog</a>
+                <a href="/orders" class="nav-link" th:if="${currentUser != null}">My Orders</a>
+                <a href="/login" class="nav-link" th:if="${currentUser == null}">Sign In</a>
+            </nav>
+            
+            <div class="nav-actions">
+                <!-- Shopping Cart Trigger Button -->
+                <button class="cart-trigger" id="cart-nav-trigger">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge" style="display: none;">0</span>
+                </button>
+                
+                <!-- Authentication Action -->
+                <div th:if="${currentUser != null}" style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                        Hi, <span th:text="${currentUser.fullName}" style="color: var(--text-primary); font-weight: 600;">John</span>
+                    </span>
+                    <button class="btn btn-secondary" id="logout-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+                <div th:if="${currentUser == null}">
+                    <a href="/login" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+                        <i class="fas fa-sign-in-alt"></i> Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Main E-Commerce Content Showcase -->
+    <main>
+        <!-- Hero Ambient Banner -->
+        <div class="hero-banner">
+            <div class="hero-content">
+                <span class="hero-subtitle">Premium Desk Curation</span>
+                <h1 class="hero-title text-gradient-primary">Elevate Your Space. Refine Your Focus.</h1>
+                <p class="hero-desc">Experience a curation of minimalist ambient lights, high-end mechanical typing interfaces, audio devices, and ergonomic tools engineered to accelerate your productivity.</p>
+                <a href="#explore" class="btn btn-primary">
+                    Explore Catalog <i class="fas fa-arrow-down" style="font-size: 0.85rem;"></i>
+                </a>
+            </div>
+            
+            <div style="font-size: 8rem; color: rgba(245, 158, 11, 0.04); pointer-events: none;" class="fas fa-gem"></div>
+        </div>
+
+        <!-- Filter & Search Row -->
+        <div class="filter-bar" id="explore">
+            <div class="categories-container">
+                <a href="/" class="category-chip" th:classappend="${activeCategory == null} ? 'active' : ''">
+                    All Gear
+                </a>
+                <a th:each="cat : ${categories}" 
+                   th:href="@{/(category=${cat})}" 
+                   class="category-chip" 
+                   th:classappend="${activeCategory == cat} ? 'active' : ''"
+                   th:text="${cat}">
+                   Category
+                </a>
+            </div>
+            
+            <!-- Real-Time Search Bar -->
+            <form action="/" method="GET" class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" class="search-input" placeholder="Search premium items..." th:value="${searchQuery}">
+                <!-- Preserve Category filter if searching -->
+                <input type="hidden" name="category" th:value="${activeCategory}" th:if="${activeCategory != null}">
+            </form>
+        </div>
+
+        <!-- Product Inventory Cards Grid -->
+        <div class="products-grid">
+            <div class="product-card" th:each="prod : ${products}">
+                <div class="product-img-wrapper">
+                    <img th:src="${prod.imageUrl}" th:alt="${prod.name}" class="product-img">
+                    <span class="product-badge" th:if="${prod.stockQuantity > 0 and prod.stockQuantity <= 15}">Limited Stock</span>
+                    <span class="product-badge" th:if="${prod.stockQuantity == 0}" style="background: var(--error);">Out of Stock</span>
+                    <div class="product-rating">
+                        <i class="fas fa-star"></i>
+                        <span th:text="${prod.rating}">4.8</span>
+                    </div>
+                </div>
+                
+                <div class="product-info">
+                    <span class="product-category" th:text="${prod.category}">Category</span>
+                    <h3 class="product-name" th:text="${prod.name}">Product Name</h3>
+                    <p class="product-desc" th:text="${prod.description}">Product Description details here.</p>
+                    
+                    <div class="product-footer">
+                        <span class="product-price" th:text="${'$' + prod.price}">$189.99</span>
+                        
+                        <!-- Actions if In Stock -->
+                        <div th:if="${prod.stockQuantity > 0}" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <!-- Quantity selection dropdown -->
+                            <select th:id="${'qty-' + prod.id}" class="form-control" style="width: 60px; padding: 0.35rem 0.5rem; border-radius: 8px; font-size: 0.85rem;">
+                                <option th:each="i : ${#numbers.sequence(1, prod.stockQuantity > 5 ? 5 : prod.stockQuantity)}" 
+                                        th:value="${i}" 
+                                        th:text="${i}">1</option>
+                            </select>
+                            
+                            <button class="btn btn-primary add-to-cart-btn" th:data-product-id="${prod.id}" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                <i class="fas fa-shopping-cart"></i> Add
+                            </button>
+                        </div>
+                        
+                        <!-- Out of Stock Indicator -->
+                        <button class="btn btn-secondary" th:if="${prod.stockQuantity == 0}" disabled style="padding: 0.5rem 1rem; font-size: 0.85rem; opacity: 0.5;">
+                            Sold Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 3. Sliding Cart Drawer (Shared Layout Widget) -->
+    <div class="cart-drawer-backdrop">
+        <div class="cart-drawer">
+            <div class="cart-header">
+                <h3 class="cart-title">
+                    <i class="fas fa-shopping-bag" style="color: var(--secondary);"></i>
+                    <span>Shopping Cart</span>
+                </h3>
+                <button class="cart-close"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Items scroll window -->
+            <div class="cart-items-container">
+                <!-- Dynamically compiled by JavaScript fetch -->
+            </div>
+            
+            <div class="cart-footer">
+                <div class="cart-summary-row">
+                    <span>Subtotal</span>
+                    <span id="drawer-subtotal">$0.00</span>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Shipping</span>
+                    <span id="drawer-shipping">$0.00</span>
+                </div>
+                <div class="cart-summary-total">
+                    <span>Grand Total</span>
+                    <span id="drawer-total">$0.00</span>
+                </div>
+                
+                <div class="cart-shipping-notice">
+                    <i class="fas fa-truck-fast"></i> Free shipping on orders over $100.00!
+                </div>
+                
+                <a href="/checkout" class="btn btn-primary" id="drawer-checkout-btn" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">
+                    Proceed to Payment <i class="fas fa-arrow-right" style="margin-left: 0.5rem;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Global Footer -->
+    <footer>
+        <p>&copy; 2026 Ecommerce Co. All rights reserved.</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Ecommerce runs on secure full-stack Spring architecture & H2 Relational Storage.</p>
+        <div class="links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="/h2-console" target="_blank" style="color: var(--secondary);"><i class="fas fa-database"></i> H2 Database Console</a>
+        </div>
+    </footer>
+
+    <!-- 5. Floating Grok AI Assistant Widget -->
+    <div class="grok-widget-container">
+        <!-- Floating Action Button -->
+        <button id="grok-trigger" class="grok-fab" title="Ask Grok AI Stylist">
+            <span class="grok-pulse-glow"></span>
+            <i class="fas fa-robot"></i>
+            <span class="grok-fab-label">Grok AI Stylist</span>
+        </button>
+
+        <!-- Chat Slide-out Panel -->
+        <div class="grok-chat-container">
+            <div class="grok-chat-header">
+                <div class="grok-chat-title">
+                    <i class="fas fa-brain" style="color: var(--primary);"></i>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-light);">Grok AI Stylist</h4>
+                        <span class="grok-status"><span class="status-dot"></span> Online</span>
+                    </div>
+                </div>
+                <button class="grok-chat-close" title="Close Panel">&times;</button>
+            </div>
+            
+            <!-- Message Stream -->
+            <div class="grok-chat-messages">
+                <div class="grok-msg grok-msg-assistant">
+                    <div class="grok-msg-bubble">
+                        Greetings. I am **Grok AI**, your personal desk stylist. Ask me anything about creating the perfect luxury mechanical typing station, acoustic studio, or ambient setup.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Prompts suggestions -->
+            <div class="grok-quick-prompts">
+                <button class="grok-suggest-chip" data-query="Suggest a luxury mechanical keyboard combo">🎹 Keyboard Setup</button>
+                <button class="grok-suggest-chip" data-query="Suggest a high-end ambient light setup">✨ Ambient Lighting</button>
+                <button class="grok-suggest-chip" data-query="Design a clean minimalist workspace">🕯️ Minimalist Desk</button>
+            </div>
+
+            <!-- Input area -->
+            <div class="grok-chat-input-row">
+                <input type="text" id="grok-chat-input" placeholder="Ask Grok for styling recommendations..." autocomplete="off">
+                <button id="grok-send-btn" class="btn btn-primary" style="padding: 0 1.25rem;" title="Send Message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Client Script -->
+    <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | Ecommerce</title>
+    
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Unified Navigation Bar -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-gem" style="color:var(--primary);"></i>
+                <span>ECOMMERCE</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Catalog</a>
+                <a href="/orders" class="nav-link active" th:if="${currentUser != null}">My Orders</a>
+            </nav>
+            
+            <div class="nav-actions">
+                <button class="cart-trigger" id="cart-nav-trigger" style="display: none;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge">0</span>
+                </button>
+                
+                <div th:if="${currentUser != null}" style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                        Hi, <span th:text="${currentUser.fullName}" style="color: var(--text-primary); font-weight: 600;">John</span>
+                    </span>
+                    <button class="btn btn-secondary" id="logout-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Orders Log View -->
+    <main>
+        <h1 class="text-gradient-primary" style="font-size: 2.25rem; margin-bottom: 0.5rem;">Order History</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2.5rem;">Review and track your past transactions, delivery checkpoints, and print dynamic invoice statements.</p>
+
+        <!-- Empty State if zero orders -->
+        <div class="checkout-card" th:if="${#lists.isEmpty(orders)}" style="text-align: center; padding: 4rem 2rem;">
+            <div class="cart-empty-icon" style="margin: 0 auto 1.5rem;"><i class="fas fa-receipt"></i></div>
+            <h2>No orders logged yet</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                You haven't placed any purchases yet. Head back to our product showcase to add items to your setups!
+            </p>
+            <a href="/" class="btn btn-primary">
+                Explore Catalog <i class="fas fa-shopping-bag" style="margin-left: 0.5rem;"></i>
+            </a>
+        </div>
+
+        <!-- Orders list loop -->
+        <div class="orders-list" th:unless="${#lists.isEmpty(orders)}">
+            <div class="order-card" th:each="ord : ${orders}" th:data-order-status="${ord.status}">
+                
+                <!-- Order card headers -->
+                <div class="order-card-header">
+                    <div class="order-meta-grid">
+                        <div class="order-meta-item">
+                            <span class="order-meta-label">Confirmation ID</span>
+                            <span class="order-meta-value text-gradient-accent" th:text="${ord.orderNumber}">ORD-XXXXXX</span>
+                        </div>
+                        <div class="order-meta-item">
+                            <span class="order-meta-label">Date Placed</span>
+                            <span class="order-meta-value" th:text="${#temporals.format(ord.createdAt, 'MMMM dd, yyyy')}">May 21, 2026</span>
+                        </div>
+                        <div class="order-meta-item">
+                            <span class="order-meta-label">Total Amount Paid</span>
+                            <span class="order-meta-value" style="color: var(--secondary); font-weight: 700;" th:text="${'$' + ord.totalAmount}">$189.99</span>
+                        </div>
+                        <div class="order-meta-item">
+                            <span class="order-meta-label">Ship To</span>
+                            <span class="order-meta-value" th:text="${ord.shippingName}">John Doe</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-secondary view-invoice-btn" th:data-order-number="${ord.orderNumber}" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                        <i class="fas fa-file-invoice"></i> View Invoice
+                    </button>
+                </div>
+                
+                <!-- Order card bodies -->
+                <div class="order-card-body">
+                    
+                    <!-- 1. Step tracking progress bar -->
+                    <div class="order-tracker-container">
+                        <div class="tracker-steps">
+                            <div class="tracker-progress-bar"></div>
+                            
+                            <div class="tracker-step">
+                                <div class="tracker-bullet">1</div>
+                                <span class="tracker-label">Placed</span>
+                            </div>
+                            <div class="tracker-step">
+                                <div class="tracker-bullet">2</div>
+                                <span class="tracker-label">Processing</span>
+                            </div>
+                            <div class="tracker-step">
+                                <div class="tracker-bullet">3</div>
+                                <span class="tracker-label">Shipped</span>
+                            </div>
+                            <div class="tracker-step">
+                                <div class="tracker-bullet">4</div>
+                                <span class="tracker-label">Delivered</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Ordered Product lines list -->
+                    <div class="order-items-grid">
+                        <div class="order-product-row" th:each="item : ${ord.orderItems}">
+                            <div class="order-product-details">
+                                <img th:src="${item.product.imageUrl}" th:alt="${item.product.name}" class="order-product-img">
+                                <div>
+                                    <div class="order-product-name" th:text="${item.product.name}">Vortex Mechanical Keyboard</div>
+                                    <div class="order-product-price">
+                                        Unit price: <span th:text="${'$' + item.price}">$189.99</span> &times; <span th:text="${item.quantity}">1</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="order-product-total" th:text="${'$' + (item.price * item.quantity)}">$189.99</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 3. Dynamic Printable Invoice Modal Backdrops -->
+    <div class="invoice-backdrop">
+        <div class="invoice-modal">
+            <div class="invoice-modal-header">
+                <h3 style="font-family: var(--font-heading); font-weight: 700; font-size: 1.25rem;">
+                    <i class="fas fa-file-invoice" style="color:var(--primary); margin-right: 0.5rem;"></i> Transaction Receipt
+                </h3>
+                <button class="invoice-modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Dynamic Print Area filled by main.js fetch -->
+            <div class="invoice-print-area">
+                <!-- Injected Asynchronously -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Ecommerce Co. All rights reserved.</p>
+        <div class="links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="/h2-console" target="_blank" style="color: var(--secondary);"><i class="fas fa-database"></i> H2 Database Console</a>
+        </div>
+    </footer>
+
+    <!-- Global Client Script -->
+    <script src="/js/main.js"></script>
+</body>
+</html>

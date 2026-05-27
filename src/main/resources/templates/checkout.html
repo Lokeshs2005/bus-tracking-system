@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout | Ecommerce</title>
+    
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Unified Navigation Bar -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-gem" style="color:var(--primary);"></i>
+                <span>ECOMMERCE</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Catalog</a>
+                <a href="/orders" class="nav-link" th:if="${currentUser != null}">My Orders</a>
+            </nav>
+            
+            <div class="nav-actions">
+                <button class="cart-trigger" id="cart-nav-trigger" style="display: none;">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-badge">0</span>
+                </button>
+                
+                <div th:if="${currentUser != null}" style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
+                        Hi, <span th:text="${currentUser.fullName}" style="color: var(--text-primary); font-weight: 600;">John</span>
+                    </span>
+                    <button class="btn btn-secondary" id="logout-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Checkout Grid Layout -->
+    <main>
+        <h1 class="text-gradient-primary" style="font-size: 2.25rem; margin-bottom: 0.5rem;">Secure Checkout</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2.5rem;">Please review your selections and enter shipping/payment details to place your secure transaction.</p>
+
+        <form id="checkout-form">
+            <div class="checkout-grid">
+                
+                <!-- COLUMN 1: Shipping Addresses & Mockup Payment Card Widget -->
+                <div style="display: flex; flex-direction: column; gap: 2rem;">
+                    
+                    <!-- 1. Shipping Details -->
+                    <div class="checkout-card">
+                        <h2 class="checkout-section-title">
+                            <i class="fas fa-truck-ramp-box" style="color: var(--primary);"></i>
+                            <span>1. Delivery Destination</span>
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="ship-name">Recipient Full Name</label>
+                            <input type="text" id="ship-name" class="form-control" th:value="${currentUser.fullName}" required placeholder="e.g. John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="ship-email">Recipient Email Address</label>
+                            <input type="email" id="ship-email" class="form-control" th:value="${currentUser.email}" required placeholder="e.g. john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="ship-address">Street Address</label>
+                            <input type="text" id="ship-address" class="form-control" placeholder="123 Cosmic Highway, Suite 404" required>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="ship-city">City</label>
+                                <input type="text" id="ship-city" class="form-control" placeholder="Neo City" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="ship-zip">Zip / Postal Code</label>
+                                <input type="text" id="ship-zip" class="form-control" placeholder="90001" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Secure Mockup Payment Gateway -->
+                    <div class="checkout-card">
+                        <h2 class="checkout-section-title">
+                            <i class="fas fa-credit-card" style="color: var(--secondary);"></i>
+                            <span>2. Secure Payment Gateway</span>
+                        </h2>
+                        
+                        <!-- 3D Flipping Credit Card Visual Widget -->
+                        <div class="payment-widget-container">
+                            <div class="credit-card-3d">
+                                
+                                <!-- FRONT FACE -->
+                                <div class="card-face card-face-front">
+                                    <div class="card-chip-row">
+                                        <div class="card-chip"></div>
+                                        <span class="card-brand" id="display-card-brand">CREDIT CARD</span>
+                                    </div>
+                                    
+                                    <div class="card-number-display" id="display-card-number">•••• •••• •••• ••••</div>
+                                    
+                                    <div class="card-holder-row">
+                                        <div>
+                                            <div class="card-meta-label">Card Holder</div>
+                                            <div class="card-meta-value" id="display-card-holder">YOUR FULL NAME</div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div class="card-meta-label">Expires</div>
+                                            <div class="card-meta-value" id="display-card-expiry">MM/YY</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- BACK FACE -->
+                                <div class="card-face card-face-back">
+                                    <div class="card-black-stripe"></div>
+                                    <div class="card-signature-stripe">
+                                        <span class="card-signature-cvv" id="display-card-cvv">•••</span>
+                                    </div>
+                                    <div style="padding: 0 1.75rem; color: var(--text-muted); font-size: 0.6rem; text-align: center;">
+                                        Mock Card Gateway Integration. Built for demonstration parameters.
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Card Inputs -->
+                        <div class="form-group">
+                            <label class="form-label" for="pay-cardnumber">Card Number</label>
+                            <input type="text" id="pay-cardnumber" class="form-control" placeholder="4000 1234 5678 9010" required maxlength="19">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="pay-cardholder">Cardholder Name</label>
+                            <input type="text" id="pay-cardholder" class="form-control" placeholder="JOHN DOE" required>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="pay-expiry">Expiration Date</label>
+                                <input type="text" id="pay-expiry" class="form-control" placeholder="12/28" required maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="pay-cvv">Security Code (CVV)</label>
+                                <input type="password" id="pay-cvv" class="form-control" placeholder="•••" required maxlength="3">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- COLUMN 2: Checkout items Summary -->
+                <div>
+                    <div class="summary-card">
+                        <h3 style="font-size: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem;">
+                            Order Summary
+                        </h3>
+                        
+                        <!-- Order product loop -->
+                        <div style="max-height: 250px; overflow-y: auto; margin-bottom: 1.5rem; display: flex; flex-direction: column;">
+                            <div class="checkout-item" th:each="item : ${cartItems}">
+                                <div class="checkout-item-details">
+                                    <img th:src="${item.product.imageUrl}" th:alt="${item.product.name}" class="checkout-item-img">
+                                    <div>
+                                        <div class="checkout-item-name" th:text="${item.product.name}">Vortex Keyboard</div>
+                                        <div class="checkout-item-qty">
+                                            Qty: <span th:text="${item.quantity}">1</span> &times; <span th:text="${'$' + item.product.price}">$189.99</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span style="font-weight: 600;" th:text="${'$' + (item.product.price * item.quantity)}">$189.99</span>
+                            </div>
+                        </div>
+
+                        <!-- Computations summary layout -->
+                        <div class="cart-summary-row">
+                            <span>Subtotal</span>
+                            <span th:text="${'$' + #numbers.formatDecimal(subtotal, 1, 2)}">$0.00</span>
+                        </div>
+                        <div class="cart-summary-row">
+                            <span>Shipping</span>
+                            <span th:text="${shipping == 0} ? 'FREE' : ${'$' + #numbers.formatDecimal(shipping, 1, 2)}">$0.00</span>
+                        </div>
+                        <div class="cart-summary-row">
+                            <span>Estimated Tax (8%)</span>
+                            <span th:text="${'$' + #numbers.formatDecimal(tax, 1, 2)}">$0.00</span>
+                        </div>
+                        <div class="cart-summary-total">
+                            <span>Grand Total</span>
+                            <span style="color: var(--secondary);" th:text="${'$' + #numbers.formatDecimal(total, 1, 2)}">$0.00</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="checkout-submit-btn" style="width: 100%; margin-top: 2rem; padding: 1rem; font-size: 1.05rem;">
+                            <i class="fas fa-credit-card"></i> Pay & Place Order
+                        </button>
+                        
+                        <a href="/" class="btn btn-secondary" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem;">
+                            <i class="fas fa-chevron-left"></i> Keep Shopping
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </main>
+
+    <!-- 3. Checkout Receipt Success Modal Backdrops -->
+    <div class="success-modal-backdrop">
+        <div class="success-modal">
+            <div class="success-icon-wrapper">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Order Complete!</h2>
+            <p>Your payment transaction has completed securely. A receipt and confirmation specs have been logged in your dashboard history.</p>
+            
+            <div class="order-code-box" id="display-success-order-number">ORD-FFFFFF</div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="btn btn-primary" id="success-home-btn">
+                    Continue Shopping <i class="fas fa-shopping-bag" style="margin-left: 0.5rem;"></i>
+                </button>
+                <a href="/orders" class="btn btn-secondary">
+                    View My Orders <i class="fas fa-history" style="margin-left: 0.5rem;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Ecommerce Co. All rights reserved.</p>
+        <div class="links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="/h2-console" target="_blank" style="color: var(--secondary);"><i class="fas fa-database"></i> H2 Database Console</a>
+        </div>
+    </footer>
+
+    <!-- Global Client Script -->
+    <script src="/js/main.js"></script>
+</body>
+</html>
