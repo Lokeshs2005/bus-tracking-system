@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Powered Government Bus Tracking & Smart Transport System</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet.js Mapping Library CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-container">
+      <a href="#" class="logo-section">
+        <i class="fa-solid fa-bus-simple"></i>
+        <div class="logo-text">
+          <span class="text-gradient" id="header-title">METRO-AI</span>
+          <p style="font-size: 0.65rem; color: var(--text-muted); font-weight: normal; margin-top: -3px;" id="header-subtitle">Govt. Transport Management</p>
+        </div>
+      </a>
+
+      <div class="nav-controls">
+        <!-- Simulation HUD -->
+        <div class="sim-speed-box">
+          <span style="color: var(--text-muted); font-weight: 500;" id="sim-status-label">Sim Status:</span>
+          <span style="color: var(--success); font-weight: bold; margin-right: 5px;" id="sim-status-state">LIVE</span>
+          <button class="sim-speed-btn" id="btn-speed-pause" title="Pause Simulation"><i class="fa-solid fa-pause"></i></button>
+          <button class="sim-speed-btn active" id="btn-speed-1x" title="1x Speed">1x</button>
+          <button class="sim-speed-btn" id="btn-speed-2x" title="2x Speed">2x</button>
+          <button class="sim-speed-btn" id="btn-speed-5x" title="5x Speed">5x</button>
+        </div>
+
+        <!-- Language Selector Button -->
+        <button class="btn" id="btn-lang-toggle" onclick="toggleLanguage()">
+          <i class="fa-solid fa-language"></i> <span id="lang-btn-text">தமிழ்</span>
+        </button>
+
+        <!-- Accessibility / Simple Mode Toggle -->
+        <button class="btn" id="btn-simple-toggle" onclick="toggleSimpleMode()" title="Simplified Mode">
+          <i class="fa-solid fa-eye"></i> <span id="simple-btn-text">Simple Mode</span>
+        </button>
+
+        <!-- Portal Toggle Selector -->
+        <div class="portal-switch">
+          <button class="portal-btn active" id="btn-portal-passenger" onclick="switchPortal('passenger')">
+            <i class="fa-solid fa-street-view"></i> <span id="portal-passenger-txt">Passenger</span>
+          </button>
+          <button class="portal-btn" id="btn-portal-admin" onclick="switchPortal('admin')">
+            <i class="fa-solid fa-chart-line"></i> <span id="portal-admin-txt">Admin Portal</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+
+    <!-- ========================================== -->
+    <!--          PORTAL 1: PASSENGER VIEW          -->
+    <!-- ========================================== -->
+    <div id="passenger-view" class="portal-view active">
+      
+      <!-- Top Weather/Traffic Modifiers & AI ETA Card -->
+      <div class="settings-bar">
+        <!-- Weather Selector -->
+        <div class="setting-select-group">
+          <i class="fa-solid fa-cloud-sun" style="color: var(--primary)"></i>
+          <label for="weather-select" id="weather-lbl">Weather:</label>
+          <select id="weather-select" onchange="recalculateAIPredictions()">
+            <option value="clear" id="weather-clear">☀️ Clear Sky</option>
+            <option value="rainy" id="weather-rainy">🌧️ Heavy Rain</option>
+            <option value="stormy" id="weather-stormy">⛈️ Storm & Fog</option>
+          </select>
+        </div>
+
+        <!-- Traffic Density Selector -->
+        <div class="setting-select-group">
+          <i class="fa-solid fa-traffic-light" style="color: var(--warning)"></i>
+          <label for="traffic-select" id="traffic-lbl">Traffic Level:</label>
+          <select id="traffic-select" onchange="recalculateAIPredictions()">
+            <option value="low" id="traffic-low">🟢 Low Traffic</option>
+            <option value="moderate" id="traffic-mod">🟡 Moderate Traffic</option>
+            <option value="heavy" id="traffic-heavy">🔴 Peak Congestion</option>
+          </select>
+        </div>
+
+        <!-- Dynamic AI Regression Predictor HUD -->
+        <div class="glass-panel ai-hud-card" style="flex-grow: 1; padding: 0.85rem 1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap: 0.5rem;">
+              <i class="fa-solid fa-brain" style="color: var(--secondary); font-size: 1.2rem; animation: pulse 2s infinite;"></i>
+              <span style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: var(--secondary);" id="ai-engine-title">AI Prediction HUD</span>
+            </div>
+            <span style="font-size: 0.65rem; color: var(--text-muted);" id="ai-model-type">Model: Random Forest Regressor (Live)</span>
+          </div>
+          
+          <div class="ai-hud-grid">
+            <div class="ai-hud-item">
+              <span style="font-size: 0.65rem; color: var(--text-secondary); display:block;" id="ai-hud-factor-lbl">Traffic Factor</span>
+              <span class="ai-hud-val" id="ai-hud-traffic-factor">1.0x</span>
+            </div>
+            <div class="ai-hud-item">
+              <span style="font-size: 0.65rem; color: var(--text-secondary); display:block;" id="ai-hud-weather-lbl">Weather Delay</span>
+              <span class="ai-hud-val" id="ai-hud-weather-delay">+0 min</span>
+            </div>
+            <div class="ai-hud-item">
+              <span style="font-size: 0.65rem; color: var(--text-secondary); display:block;" id="ai-hud-confidence-lbl">Prediction Accuracy</span>
+              <span class="ai-hud-val" id="ai-hud-confidence" style="color: var(--success)">94.2%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Passenger Grid -->
+      <div class="passenger-grid">
+        
+        <!-- Left: Leaflet Live Map Card -->
+        <div class="glass-panel" style="padding: 0.5rem; display: flex; flex-direction: column;">
+          <div style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.05rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-earth-americas" style="color: var(--primary)"></i>
+              <span id="map-title">Interactive Bus Locator Map</span>
+            </h3>
+            <span class="badge badge-success" id="map-live-indicator"><i class="fa-solid fa-circle-dot" style="font-size: 0.55rem; margin-right: 4px;"></i> Live Updates</span>
+          </div>
+          
+          <div class="map-container">
+            <div id="map"></div>
+            
+            <!-- Map Control Overlays -->
+            <div class="map-overlay-controls">
+              <button class="btn btn-primary" id="btn-locate-me" onclick="simulateUserLocation()" title="Simulate Current User Location">
+                <i class="fa-solid fa-location-crosshairs"></i> <span id="locate-me-txt">Find Nearest Stop</span>
+              </button>
+              <button class="btn" id="btn-toggle-routes" onclick="toggleRouteOverlays()" title="Show/Hide Bus Routes paths">
+                <i class="fa-solid fa-route"></i> <span id="toggle-route-txt">Toggle Route Paths</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Sidebar Panels -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          
+          <!-- Route Finder & Timetable Card -->
+          <div class="glass-panel timetable-section">
+            <h3 style="font-family: var(--font-heading); font-size: 1rem; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-calendar-days" style="color: var(--primary)"></i>
+              <span id="schedule-title">Route Schedule & Next Stop ETAs</span>
+            </h3>
+            
+            <!-- Search bus input -->
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted)"></i>
+              <input type="text" id="route-search" placeholder="Search by route, stop name..." onkeyup="filterTimetables()">
+            </div>
+
+            <!-- Route Quick Tabs -->
+            <div class="route-tabs" id="route-tabs-container">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Timetable List -->
+            <div class="timetable-list" id="timetable-list-container">
+              <!-- Dynamically loaded stops for the active route -->
+            </div>
+          </div>
+
+          <!-- MetroAI Assistant Chatbot Widget -->
+          <div class="glass-panel chat-box">
+            <div class="chat-header">
+              <div class="chat-title">
+                <i class="fa-solid fa-robot" style="color: var(--secondary)"></i>
+                <span>MetroAI - Assistant</span>
+              </div>
+              <button class="btn" id="btn-quick-qr" onclick="openQRModal()" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">
+                <i class="fa-solid fa-ticket"></i> <span id="book-ticket-txt">Book Ticket</span>
+              </button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages-container">
+              <div class="chat-msg chat-msg-bot" id="bot-welcome-msg">
+                Welcome to Metro-AI transit assistant! Ask me route directions or bus schedules. (Supports speech recognition in Tamil/English).
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <input type="text" id="chat-user-input" placeholder="Ask MetroAI (e.g., 'When is the next Route 101 bus?')" onkeydown="if(event.key === 'Enter') handleChatInput()">
+              <button class="mic-btn" id="btn-voice-mic" onclick="toggleVoiceAssistant()" title="Speak in English/Tamil">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+              <button class="btn btn-primary" onclick="handleChatInput()" style="border-radius: 20px; padding: 0.5rem 1rem;">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--           PORTAL 2: ADMIN PANEL            -->
+    <!-- ========================================== -->
+    <div id="admin-view" class="portal-view">
+      <div class="admin-grid">
+        
+        <!-- Live AI Alert Notifications -->
+        <div class="admin-ai-alert" id="admin-ai-alert-box" style="display: none;">
+          <div class="ai-alert-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div class="ai-alert-content">
+            <div class="ai-alert-title" id="ai-alert-title">AI Route Recommendation Alert</div>
+            <div class="ai-alert-text" id="ai-alert-text">Peak passenger demand identified at Central Terminal. Deploying additional bus on Route 101 is highly recommended to reduce waiting times.</div>
+          </div>
+          <button class="btn btn-primary" onclick="deployRecommendedBus()" style="padding: 0.4rem 0.85rem; font-size: 0.75rem;" id="deploy-bus-btn">Deploy Bus</button>
+        </div>
+
+        <!-- 4 KPI Metrics Cards Row -->
+        <div class="metrics-row">
+          <!-- Card 1 -->
+          <div class="glass-panel kpi-card">
+            <span class="kpi-title" id="kpi-running-lbl">Total Buses Running</span>
+            <div class="kpi-stat-row">
+              <span class="kpi-val" id="kpi-total-buses">6</span>
+              <span class="kpi-change up"><i class="fa-solid fa-arrow-trend-up"></i> +16.7%</span>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div class="glass-panel kpi-card ontime">
+            <span class="kpi-title" id="kpi-ontime-lbl">On-Time Status</span>
+            <div class="kpi-stat-row">
+              <span class="kpi-val" id="kpi-ontime-count">4</span>
+              <span class="kpi-change up"><i class="fa-solid fa-arrow-trend-up"></i> 66.6%</span>
+            </div>
+          </div>
+          <!-- Card 3 -->
+          <div class="glass-panel kpi-card delayed">
+            <span class="kpi-title" id="kpi-delayed-lbl">Delayed Buses</span>
+            <div class="kpi-stat-row">
+              <span class="kpi-val" id="kpi-delayed-count">2</span>
+              <span class="kpi-change down"><i class="fa-solid fa-arrow-trend-down"></i> 33.3%</span>
+            </div>
+          </div>
+          <!-- Card 4 -->
+          <div class="glass-panel kpi-card alert">
+            <span class="kpi-title" id="kpi-waiting-lbl">Avg. Waiting Time</span>
+            <div class="kpi-stat-row">
+              <span class="kpi-val" id="kpi-avg-wait">14m</span>
+              <span class="kpi-change down" id="kpi-wait-change"><i class="fa-solid fa-arrow-trend-down"></i> -3 min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CCTV AI Crowd Detection Widget -->
+        <div class="glass-panel">
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; display:flex; align-items:center; justify-content:space-between; margin-bottom: 1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-video" style="color: var(--danger)"></i>
+              <span id="cctv-widget-title">AI Video CCTV Stop Crowd Monitoring</span>
+            </div>
+            <div>
+              <button class="btn" onclick="triggerCCTVSimulation()" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" id="cctv-trigger-btn">Force Passenger Peak</button>
+            </div>
+          </h3>
+          
+          <div class="cctv-card">
+            <!-- CCTV Simulated Video Render -->
+            <div class="cctv-viewport-wrapper" id="cctv-viewport">
+              <div class="cctv-hud">
+                <span>STOP-01 [CENTRAL]</span>
+                <span id="cctv-timestamp">LIVE: 2026-06-23 15:35:10</span>
+              </div>
+              <div class="cctv-scan-line"></div>
+              
+              <!-- Draw background representing bus stop scene -->
+              <div style="width: 100%; height: 100%; display:flex; align-items:center; justify-content:center; background:#1b253f;">
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                  <i class="fa-solid fa-people-group" style="font-size: 4rem; color: rgba(255,255,255,0.06); display:block; margin-bottom:0.75rem;"></i>
+                  <span style="font-family: monospace;" id="cctv-load-status">PASSENGERS WAITING IN VIEW</span>
+                </div>
+              </div>
+              
+              <!-- AI Bounding Boxes (Dynamically compiled via JS) -->
+              <div id="cctv-bounding-boxes-container"></div>
+            </div>
+
+            <!-- CCTV Stats Panel -->
+            <div style="display:flex; flex-direction:column; justify-content:space-between;">
+              <div class="glass-panel" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.02); height: 100%;">
+                <h4 style="font-size: 0.85rem; color: var(--primary); margin-bottom: 0.5rem;" id="cctv-analytics-lbl">CCTV Image AI Analytics</h4>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem;" id="cctv-analytics-desc">Real-time object detection models track passengers waiting on the physical bus platform to estimate route demand factors.</p>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                  <div style="background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:4px;">
+                    <span style="font-size:0.6rem; color:var(--text-muted); display:block;" id="cctv-density-lbl">Crowd Count</span>
+                    <strong style="font-size:1.15rem; color:var(--text-primary);" id="cctv-passenger-count">8 People</strong>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.02); padding:0.6rem; border-radius:4px;">
+                    <span style="font-size:0.6rem; color:var(--text-muted); display:block;" id="cctv-status-lbl">Congestion Rate</span>
+                    <strong style="font-size:1.15rem; color:var(--success);" id="cctv-congestion-status">Low</strong>
+                  </div>
+                </div>
+
+                <div style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 0.75rem;">
+                  <span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;" id="cctv-recommendation-lbl">AI Dispatch Advice:</span>
+                  <div style="font-size: 0.75rem; color: var(--success); margin-top: 0.25rem;" id="cctv-dispatch-advice">
+                    <i class="fa-solid fa-circle-check"></i> Standard schedule capacity is optimal. No action required.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Analytics Charts Panel -->
+        <div class="charts-grid">
+          <!-- Chart 1: Route-wise Bus count -->
+          <div class="glass-panel chart-card">
+            <h3 id="chart-route-bus-count-title">Route-wise Bus Allocations</h3>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chartRouteBusCount"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Hourly Passenger Demand -->
+          <div class="glass-panel chart-card">
+            <h3 id="chart-passenger-demand-title">Hourly Passenger Demand (AI Predicted)</h3>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chartPassengerDemand"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 3: Delay Statistics -->
+          <div class="glass-panel chart-card">
+            <h3 id="chart-delay-stats-title">Fulfillment & Delay Incidents</h3>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chartDelayStats"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 4: Peak Traffic congestion -->
+          <div class="glass-panel chart-card">
+            <h3 id="chart-traffic-analysis-title">Peak Congestion Level By Location</h3>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chartTrafficAnalysis"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Reports (Least Frequent and Driver Performance) -->
+        <div class="report-row">
+          <!-- Report A: Least Frequent Bus Routes -->
+          <div class="glass-panel">
+            <h3 style="font-family: var(--font-heading); font-size: 0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+              <span id="rpt-freq-title">Least Frequent Routes Audit</span>
+              <button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="addBusToLeastFrequent()" id="rpt-freq-add-btn">Add Extra Bus</button>
+            </h3>
+            
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th id="th-route">Route</th>
+                    <th id="th-destination">Destination</th>
+                    <th id="th-buses-run">Buses Running</th>
+                    <th id="th-frequency">Frequency</th>
+                    <th id="th-demand">Demand</th>
+                  </tr>
+                </thead>
+                <tbody id="least-frequent-routes-table">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Report B: Driver Performance Tracking -->
+          <div class="glass-panel">
+            <h3 style="font-family: var(--font-heading); font-size: 0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;" id="rpt-driver-title">Driver Performance Analysis</h3>
+            
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th id="th-driver">Driver Name</th>
+                    <th id="th-bus-num">Bus Number</th>
+                    <th id="th-delay">Delay Time</th>
+                    <th id="th-safety">Safety Score</th>
+                    <th id="th-rating">Rating</th>
+                  </tr>
+                </thead>
+                <tbody id="driver-performance-table">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Database Schema Table Viewer -->
+        <div class="glass-panel">
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; margin-bottom: 0.75rem;" id="db-viewer-title">Database Storage & Relational Schema Visualizer</h3>
+          
+          <div class="db-table-tabs">
+            <button class="db-tab-btn active" onclick="switchDbTable('bus')">Bus Table</button>
+            <button class="db-tab-btn" onclick="switchDbTable('route')">Route Table</button>
+            <button class="db-tab-btn" onclick="switchDbTable('gps')">GPS Tracking Table</button>
+            <button class="db-tab-btn" onclick="switchDbTable('timetable')">Timetable Table</button>
+          </div>
+
+          <div class="table-wrapper" style="max-height: 250px;">
+            <table id="db-visualizer-table">
+              <!-- Rendered dynamically -->
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: QR TICKET SCANNING -->
+  <div class="modal-backdrop" id="qr-modal-backdrop">
+    <div class="glass-panel modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border); padding-bottom: 0.5rem;">
+        <h3 style="font-family: var(--font-heading);" id="qr-modal-title">Smart QR Ticket Booking</h3>
+        <button onclick="closeQRModal()" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; font-size:1.25rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div style="margin-top: 1rem; text-align: left;">
+        <div style="margin-bottom:0.75rem;">
+          <label style="font-size:0.7rem; color:var(--text-muted); display:block;" id="qr-select-route-lbl">SELECT ROUTE:</label>
+          <select id="qr-route-select" onchange="generateDynamicQR()" style="width:100%; padding:0.5rem; background:var(--bg-tertiary); border:1px solid var(--glass-border); color:#fff; border-radius:4px;">
+            <!-- Dynamically filled -->
+          </select>
+        </div>
+
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <div style="flex:1;">
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block;" id="qr-fare-lbl">FARE TOTAL:</label>
+            <strong style="color:var(--success); font-size:1.1rem;" id="qr-ticket-fare">₹20.00</strong>
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.7rem; color:var(--text-muted); display:block;" id="qr-seats-lbl">SEATS:</label>
+            <span style="font-size:0.85rem;" id="qr-seats-available">42 Seats Free</span>
+          </div>
+        </div>
+
+        <!-- QR Render Box -->
+        <div class="qr-code-placeholder" id="qr-code-display">
+          <!-- QR code Canvas / SVG injected by JS -->
+        </div>
+
+        <p style="font-size: 0.65rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;" id="qr-instructions">Scan this QR Code at the bus gateway reader during boarding.</p>
+      </div>
+
+      <div style="margin-top: 1.5rem; display:flex; gap:0.5rem;">
+        <button class="btn btn-primary" onclick="confirmQRBooking()" style="flex:1;" id="qr-confirm-btn">Confirm Purchase</button>
+        <button class="btn" onclick="closeQRModal()" style="flex:1;" id="qr-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Government Transport AI Division. Smart Cities Project Initiative.</p>
+      <p style="font-size:0.7rem; color: var(--text-muted); margin-top:0.25rem;">
+        Powered by LeafletJS Dark Maps & ChartJS Dashboard Widgets. Built for educational demonstrations.
+      </p>
+      <div style="margin-top: 0.5rem;">
+        <a href="#about" id="footer-privacy">Privacy Policy</a>
+        <a href="#about" id="footer-terms">Terms of Service</a>
+        <a href="#about" id="footer-contact">Contact Center</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Leaflet.js Mapping Library Script -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Chart.js Library Script -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
